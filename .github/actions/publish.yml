@@ -1,0 +1,94 @@
+name: 'Publishing'
+description: 'Publishing'
+
+inputs:
+  templateFilePath:
+    description: 'The path to the template file to publish'
+    required: true
+  bicepRegistryName:
+    description: 'Required to publish to private bicep registry. Name of the container registry to publish to'
+    required: false
+  bicepRegistryRgName:
+    description: 'Required to publish to private bicep registry. Name of the container registry resource group'
+    required: false
+  bicepRegistryRgLocation:
+    description: 'Required to publish to private bicep registry. Location of the container registry resource group'
+    required: false
+  bicepRegistryDoPublish:
+    description: 'Flag to indicate whether or not to publish to the public bicep registry'
+    default: 'false'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Setup agent'
+      shell: pwsh
+      run: |
+        # Grouping task logs
+        Write-Output '::group::Setup agent'
+
+        # Load used functions
+        . (Join-Path $env:GITHUB_WORKSPACE 'utilities' 'pipelines' 'sharedScripts' 'Set-EnvironmentOnAgent.ps1')
+
+        # Define PS modules to install on the runner
+        $Modules = @(
+            @{ Name = 'Az.Accounts' },
+            @{ Name = 'Az.ContainerRegistry' },
+            @{ Name = 'Az.Resources' }
+        )
+
+        # Set agent up
+        Set-EnvironmentOnAgent -PSModules $Modules
+
+        Write-Output '::endgroup::'
+
+    - name: Azure Login
+      uses: Azure/login@v1
+      with:
+        creds: ${{ env.AZURE_CREDENTIALS }}
+        enable-AzPSSession: true
+
+    - name: 'Publish modules to public bicep registry'
+      if: ${{ inputs.bicepRegistryDoPublish == 'true' }}
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: 'latest'
+        inlineScript: |
+          # Grouping task logs
+          Write-Output '::group::Publish module to private bicep registry'
+
+          # Load used functions
+          . (Join-Path $env:GITHUB_WORKSPACE 'utilities' 'pipelines' 'resourcePublish' 'Get-ModulesToPublish.ps1')
+          . (Join-Path $env:GITHUB_WORKSPACE 'utilities' 'pipelines' 'resourcePublish' 'Publish-ModuleToPrivateBicepRegistry.ps1')
+
+          $functionInput = @{
+            TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ inputs.templateFilePath }}"
+          }
+
+          Write-Verbose "Invoke task with" -Verbose
+          Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+          # Get the modified child resources
+          $ModulesToPublish = Get-ModulesToPublish @functionInput -Verbose
+
+          # Publish the modified child resources
+          foreach ($ModuleToPublish in $ModulesToPublish) {
+            $RelPath = (($ModuleToPublish.TemplateFilePath).Split('/modules/')[-1]).Split('/deploy.')[0]
+            Write-Output "::group::$(' - [{0}] [{1}]' -f $RelPath, $ModuleToPublish.Version)"
+
+            $functionInput = @{
+              TemplateFilePath        = $ModuleToPublish.TemplateFilePath
+              BicepRegistryName       = '${{ inputs.bicepRegistryName }}'
+              BicepRegistryRgName     = '${{ inputs.bicepRegistryRgName }}'
+              BicepRegistryRgLocation = '${{ inputs.bicepRegistryRgLocation }}'
+              ModuleVersion           = $ModuleToPublish.Version
+            }
+
+            Write-Verbose "Invoke task with" -Verbose
+            Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+            Publish-ModuleToPrivateBicepRegistry @functionInput -Verbose
+          }
+
+          Write-Output '::endgroup::'
