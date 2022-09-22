@@ -102,7 +102,7 @@ jobs:
       - name: 'Push latest parent modules'
         if: github.ref == 'refs/heads/push2Modules'
         run: |
-          date > 'modules\generated.txt'
+          date > ${{ github.worspace }}/modules/generated.txt
           git config --global user.email '${{ env.GitUserEmail }}'
           git config --global user.name '${{ env.GitUserName }}'
 
