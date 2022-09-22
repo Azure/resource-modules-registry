@@ -35,10 +35,15 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: 'Azure/ResourceModules'
+          path: carml
       - name: 'Checkout Azure/resource-modules-registry'
         uses: actions/checkout@v3
+        with:
+          clean: false
+          path: carmr
       - name: "Let's have a look"
         shell: pwsh
         run: |
+          dir env:
           pwd
-          dir
+          gci
