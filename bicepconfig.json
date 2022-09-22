@@ -2,7 +2,7 @@
     "moduleAliases": {
         "br": {
           "carmr": {
-            "registry": "adpsxxazacrx009.azurecr.io",
+            "registry": "carmr.azurecr.io",
             "modulePath": "bicep/modules"
           }
         }

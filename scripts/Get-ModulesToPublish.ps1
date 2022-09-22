@@ -2,6 +2,33 @@
 
 <#
 .SYNOPSIS
+Get parent modules only.
+
+.EXAMPLE
+Get-ParentModules
+
+    Directory: C:\Repo\Azure\ResourceModules\utilities\pipelines\resourcePublish
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+la---          08.12.2021    15:50           7133 Script.ps1
+
+Get modified files between previous and current commit depending on if you are running on main/master or a custom branch.
+#>
+function Get-ParentModules {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string] $ModulesPath
+    )
+
+    $ParentModules = Get-ChildItem -Path $ModulesPath -Recurse -Depth 2 -Include *.bicep,*.json
+
+    return $ParentModules
+}
+
+<#
+.SYNOPSIS
 Get modified files between previous and current commit depending on if you are running on main/master or a custom branch.
 
 .EXAMPLE

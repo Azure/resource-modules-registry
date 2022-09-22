@@ -1,46 +1,111 @@
-name: 'Publish'
+name: 'Pull, collect and publish'
 
 on:
   workflow_dispatch:
     inputs:
-      foo:
+      publish:
         type: boolean
-        description: 'bar'
+        description: 'Publish'
         required: false
-        default: true
+        default: false
 
   push:
     branches:
-      - main
-    paths:
-      - '.github/actions/templates/**'
-      - '.github/workflows/publish.yml'
-      - 'modules/**'
+      - mvp
 
 env:
-  variablesPath: 'settings.yml'
-
   AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-  ARM_SUBSCRIPTION_ID: '${{ secrets.ARM_SUBSCRIPTION_ID }}'
-  ARM_MGMTGROUP_ID: '${{ secrets.ARM_MGMTGROUP_ID }}'
-  ARM_TENANT_ID: '${{ secrets.ARM_TENANT_ID }}'
+
+  GitUserName: 'CARMR Bot'
+  GitUserEmail: 'carmr@noreply.github.com'
+
+  bicepRegistryDoPublish: true # Set to true, if you would like to publish module templates to a bicep registry
+  bicepRegistryName: carmr # The name of the bicep registry (ACR) to publish to. If it does not exist, it will be created.
+  bicepRegistryRGName: 'artifacts-rg' # The resource group that hosts the private bicep registry (ACR). If it does not exist, it will be created.
+  bicepRegistryRgLocation: 'Australia East' # The location of the resource group to publish to
+  bicepRegistryPublic: true # Set to true, if you would like to enable public (anonymous) registry access
+
+  modulesPath: carml/modules
 
 jobs:
-  job_pull_modules:
-    name: 'Publishing'
+  job_publish_modules:
+    name: 'Pull, collect and publish'
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-20.04
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
+      - name: 'Checkout Azure/resource-modules-registry'
+        uses: actions/checkout@v3
+        # with:
+          # clean: false
+          # path: carmr
+          # token: '${{ secrets.PAT }}'
+      - name: 'Checkout Azure/ResourceModules'
+        uses: actions/checkout@v3
         with:
           repository: 'Azure/ResourceModules'
-          fetch-depth: 0
-  job_publish_modules:
-    name: 'Publishing'
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.foo == 'true'
-    runs-on: ubuntu-20.04
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
+          path: carml
+          # clean: false
+      - name: "Let's have a look"
+        shell: pwsh
+        run: |
+          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
+          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToBicepRegistry.ps1')
+
+          $ModulesPath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
+          Get-ParentModules $ModulesPath -Verbose
+          # Get-ChildItem $ModulesPath -Recurse -Depth 3 | select FullName
+
+      - name: Azure Login
+        if: github.event.inputs.publish == 'true'
+        uses: Azure/login@v1
         with:
-          fetch-depth: 0
+          creds: ${{ env.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+      - name: 'Publish module to private bicep registry'
+        if: github.event.inputs.publish == 'true'
+        uses: azure/powershell@v1
+        with:
+          azPSVersion: 'latest'
+          inlineScript: |
+            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
+            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToBicepRegistry.ps1')
+
+            $functionInput = @{
+              TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
+            }
+
+            Write-Verbose "Invoke task with" -Verbose
+            Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+            # Get the modified child resources
+            $ModulesToPublish = Get-ModulesToPublish @functionInput -Verbose
+
+            # Publish the modified child resources
+            foreach ($ModuleToPublish in $ModulesToPublish) {
+              $RelPath = (($ModuleToPublish.FullName).Split('/modules/')[-1]).Split('/deploy.')[0]
+              Write-Output "::group::$(' - [{0}] [{1}]' -f $RelPath, $ModuleToPublish.Version)"
+
+              $functionInput = @{
+                TemplateFilePath        = $ModuleToPublish.TemplateFilePath
+                BicepRegistryName       = '${{ env.bicepRegistryName }}'
+                BicepRegistryRgName     = '${{ env.bicepRegistryRgName }}'
+                BicepRegistryRgLocation = '${{ env.bicepRegistryRgLocation }}'
+                BicepRegistryPublic     = '${{ env.bicepRegistryPublic}}'
+                ModuleVersion           = $ModuleToPublish.Version
+              }
+
+              Write-Verbose "Invoke task with" -Verbose
+              Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+              Publish-ModuleToBicepRegistry @functionInput -Verbose
+            }
+      - name: 'Push latest parent modules'
+        if: github.ref == 'refs/heads/main'
+        run: |
+          date > generated.txt
+          git config --global user.email '${{ env.GitUserEmail }}'
+          git config --global user.name '${{ env.GitUserName }}'
+
+          git add .
+          git commit -m "Push latest modules"
+          git push
