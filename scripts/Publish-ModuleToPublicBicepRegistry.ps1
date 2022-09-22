@@ -47,7 +47,10 @@ function Publish-ModuleToPrivateBicepRegistry {
         [string] $BicepRegistryRgName,
 
         [Parameter(Mandatory = $false)]
-        [string] $BicepRegistryRgLocation
+        [string] $BicepRegistryRgLocation,
+
+        [Parameter(Mandatory = $false)]
+        [bool] $BicepRegistryPublic
     )
 
     begin {
@@ -76,15 +79,21 @@ function Publish-ModuleToPrivateBicepRegistry {
             }
         }
 
+        if ($BicepRegistryPublic) {
+            if ($PSCmdlet.ShouldProcess("Container Registry [$BicepRegistryName] public (anonymous) access", 'Enable')) {
+                az acr update --name $BicepRegistryRgName --anonymous-pull-enabled
+            }
+        }
+
         # Extracts Microsoft.KeyVault/vaults from e.g. C:\modules\Microsoft.KeyVault\vaults\deploy.bicep
         $moduleIdentifier = (Split-Path $TemplateFilePath -Parent).Replace('\', '/').Split('/modules/')[1]
         $moduleRegistryIdentifier = 'bicep/modules/{0}' -f $moduleIdentifier.Replace('\', '/').Replace('/', '.').ToLower()
 
         #############################################
-        ##    Publish to private bicep registry    ##
+        ##    Publish to bicep registry    ##
         #############################################
         $publishingTarget = 'br:{0}.azurecr.io/{1}:{2}' -f $BicepRegistryName, $moduleRegistryIdentifier, $ModuleVersion
-        if ($PSCmdlet.ShouldProcess("Private bicep registry entry [$moduleRegistryIdentifier] version [$ModuleVersion] to registry [$BicepRegistryName]", 'Publish')) {
+        if ($PSCmdlet.ShouldProcess("Bicep registry entry [$moduleRegistryIdentifier] version [$ModuleVersion] to registry [$BicepRegistryName]", 'Publish')) {
             bicep publish $TemplateFilePath --target $publishingTarget
         }
         Write-Verbose 'Publish complete'

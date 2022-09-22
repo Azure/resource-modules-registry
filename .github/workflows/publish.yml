@@ -1,13 +1,13 @@
-name: 'Publish'
+name: 'Pull, collect and publish'
 
 on:
   workflow_dispatch:
     inputs:
-      foo:
+      publish:
         type: boolean
-        description: 'bar'
+        description: 'Publish'
         required: false
-        default: true
+        default: false
 
   push:
     branches:
@@ -25,10 +25,13 @@ env:
   ARM_MGMTGROUP_ID: '${{ secrets.ARM_MGMTGROUP_ID }}'
   ARM_TENANT_ID: '${{ secrets.ARM_TENANT_ID }}'
 
+  GitUserName: 'CARMR Bot'
+  itUserEmail: 'carmr@noreply.github.com'
+
 jobs:
   job_publish_modules:
     name: 'Pull, collect and publish'
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.foo == 'true'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-20.04
     steps:
       - name: 'Pull Azure/ResourceModules'
@@ -41,9 +44,57 @@ jobs:
         with:
           clean: false
           path: carmr
+          token: '${{ secrets.PLATFORM_REPO_UPDATE_PAT }}'
       - name: "Let's have a look"
         shell: pwsh
         run: |
           dir env:
           pwd
-          gci
+          gci -recurse | select FullName
+      - name: 'Publish module to private bicep registry'
+        if: github.event.inputs.publish == 'true'
+        uses: azure/powershell@v1
+        with:
+          azPSVersion: 'latest'
+          inlineScript: |
+            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
+            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToPublicBicepRegistry.ps1')
+
+            $functionInput = @{
+              TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ inputs.templateFilePath }}"
+            }
+
+            Write-Verbose "Invoke task with" -Verbose
+            Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+            # Get the modified child resources
+            $ModulesToPublish = Get-ModulesToPublish @functionInput -Verbose
+
+            # Publish the modified child resources
+            foreach ($ModuleToPublish in $ModulesToPublish) {
+              $RelPath = (($ModuleToPublish.TemplateFilePath).Split('/modules/')[-1]).Split('/deploy.')[0]
+              Write-Output "::group::$(' - [{0}] [{1}]' -f $RelPath, $ModuleToPublish.Version)"
+
+              $functionInput = @{
+                TemplateFilePath        = $ModuleToPublish.TemplateFilePath
+                BicepRegistryName       = '${{ env.bicepRegistryName }}'
+                BicepRegistryRgName     = '${{ env.bicepRegistryRgName }}'
+                BicepRegistryRgLocation = '${{ env.bicepRegistryRgLocation }}'
+                ModuleVersion           = $ModuleToPublish.Version
+              }
+
+              Write-Verbose "Invoke task with" -Verbose
+              Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
+
+              Publish-ModuleToPrivateBicepRegistry @functionInput -Verbose
+            }
+      - name: 'Push latest modules'
+        shell: pwsh
+        run: |
+          git config --global user.email '${{ env.GitUserEmail }}'
+          git config --global user.name '${{ env.GitUserName }}'
+
+          git pull
+          git add .
+          git commit -m "Push latest modules"
+          git push
