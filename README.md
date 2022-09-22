@@ -1,6 +1,17 @@
 # Resource Modules Registry
 
-This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) with parent Modules to be published into a public [Bicep registry](#).
+This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) where modules are published to a public [Bicep registry](#) and can be called from.
+
+```bicep
+param name string
+
+module storageModule 'br/carmr:microsoft.storage.storageaccounts:1.0' = {
+  name: 'stgStorage'
+  params: {
+    name: name
+  }
+}
+```
 
 ## Contributing
 
