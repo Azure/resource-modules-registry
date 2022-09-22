@@ -81,7 +81,7 @@ function Publish-ModuleToPrivateBicepRegistry {
 
         if ($BicepRegistryPublic) {
             if ($PSCmdlet.ShouldProcess("Container Registry [$BicepRegistryName] public (anonymous) access", 'Enable')) {
-                az acr update --name $BicepRegistryRgName --anonymous-pull-enabled
+                az acr update --name $BicepRegistryName --anonymous-pull-enabled
             }
         }
 

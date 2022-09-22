@@ -56,7 +56,7 @@ jobs:
           # Get-ChildItem $ModulesPath -Recurse -Depth 3 | select FullName
 
       - name: Azure Login
-        if: github.event.inputs.publish == 'true'
+        # if: github.event.inputs.publish == 'true'
         uses: Azure/login@v1
         with:
           creds: ${{ env.AZURE_CREDENTIALS }}
