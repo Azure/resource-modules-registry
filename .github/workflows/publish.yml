@@ -26,21 +26,19 @@ env:
   ARM_TENANT_ID: '${{ secrets.ARM_TENANT_ID }}'
 
 jobs:
-  job_pull_modules:
-    name: 'Publishing'
-    runs-on: ubuntu-20.04
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
-        with:
-          repository: 'Azure/ResourceModules'
-          fetch-depth: 0
   job_publish_modules:
     name: 'Publishing'
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.foo == 'true'
     runs-on: ubuntu-20.04
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
+      - name: 'Checkout Azure/ResourceModules'
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          repository: 'Azure/ResourceModules'
+      - name: 'Checkout self'
+        uses: actions/checkout@v3
+      - name: 'pwsh'
+        shell: pwsh
+        run: |
+          pwd
+          dir
