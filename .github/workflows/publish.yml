@@ -89,8 +89,8 @@ jobs:
               Publish-ModuleToPrivateBicepRegistry @functionInput -Verbose
             }
       - name: 'Push latest modules'
-      - uses: actions/checkout@v3
-      - run: |
+        uses: actions/checkout@v3
+        run: |
           date > generated.txt
           git config --global user.email '${{ env.GitUserEmail }}'
           git config --global user.name '${{ env.GitUserName }}'
