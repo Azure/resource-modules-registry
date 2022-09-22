@@ -51,7 +51,8 @@ jobs:
           . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToBicepRegistry.ps1')
 
           $ModulesPath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
-          Get-ParentModules $ModulesPath -Verbose
+          # Get-ParentModules $ModulesPath -Verbose
+          Get-ChildItem -Recurse -Depth 3 | select FullName
 
       - name: Azure Login
         if: github.event.inputs.publish == 'true'
