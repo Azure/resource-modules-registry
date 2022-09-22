@@ -100,9 +100,9 @@ jobs:
               Publish-ModuleToBicepRegistry @functionInput -Verbose
             }
       - name: 'Push latest parent modules'
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/push2Modules'
         run: |
-          date > generated.txt
+          date > 'modules\generated.txt'
           git config --global user.email '${{ env.GitUserEmail }}'
           git config --global user.name '${{ env.GitUserName }}'
 
