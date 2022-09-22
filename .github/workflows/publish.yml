@@ -11,7 +11,7 @@ on:
 
   push:
     branches:
-      - main
+      - mvp
     paths:
       - '.github/actions/templates/**'
       - '.github/workflows/publish.yml'
@@ -27,17 +27,17 @@ env:
 
 jobs:
   job_publish_modules:
-    name: 'Publishing'
+    name: 'Pull, collect and publish'
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.foo == 'true'
     runs-on: ubuntu-20.04
     steps:
-      - name: 'Checkout Azure/ResourceModules'
+      - name: 'Pull Azure/ResourceModules'
         uses: actions/checkout@v3
         with:
           repository: 'Azure/ResourceModules'
-      - name: 'Checkout self'
+      - name: 'Checkout Azure/resource-modules-registry'
         uses: actions/checkout@v3
-      - name: 'pwsh'
+      - name: 'Let's have a look'
         shell: pwsh
         run: |
           pwd
