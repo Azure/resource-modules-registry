@@ -48,7 +48,7 @@ jobs:
         shell: pwsh
         run: |
           . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
-          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToPublicBicepRegistry.ps1')
+          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToBicepRegistry.ps1')
 
           $ModulesPath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
           Get-ParentModules $ModulesPath -Verbose
