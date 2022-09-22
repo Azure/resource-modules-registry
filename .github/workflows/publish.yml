@@ -25,7 +25,7 @@ env:
   bicepRegistryRgLocation: 'Australia East' # The location of the resource group to publish to
   bicepRegistryPublic: true # Set to true, if you would like to enable public (anonymous) registry access
 
-  modulesPath: /carml/modules/
+  modulesPath: carml
 
 jobs:
   job_publish_modules:
@@ -66,7 +66,7 @@ jobs:
           azPSVersion: 'latest'
           inlineScript: |
             . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
-            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToPublicBicepRegistry.ps1')
+            . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToBicepRegistry.ps1')
 
             $functionInput = @{
               TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
