@@ -12,21 +12,20 @@ on:
   push:
     branches:
       - mvp
-    paths:
-      - '.github/actions/templates/**'
-      - '.github/workflows/publish.yml'
-      - 'modules/**'
 
 env:
-  variablesPath: 'settings.yml'
-
   AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-  ARM_SUBSCRIPTION_ID: '${{ secrets.ARM_SUBSCRIPTION_ID }}'
-  ARM_MGMTGROUP_ID: '${{ secrets.ARM_MGMTGROUP_ID }}'
-  ARM_TENANT_ID: '${{ secrets.ARM_TENANT_ID }}'
 
   GitUserName: 'CARMR Bot'
   GitUserEmail: 'carmr@noreply.github.com'
+
+  bicepRegistryDoPublish: true # Set to true, if you would like to publish module templates to a bicep registry
+  bicepRegistryName: carmr # The name of the bicep registry (ACR) to publish to. If it does not exist, it will be created.
+  bicepRegistryRGName: 'artifacts-rg' # The resource group that hosts the private bicep registry (ACR). If it does not exist, it will be created.
+  bicepRegistryRgLocation: 'Australia East' # The location of the resource group to publish to
+  bicepRegistryPublic: true # Set to true, if you would like to enable public (anonymous) registry access
+
+  modulesPath: /carml/modules/
 
 jobs:
   job_publish_modules:
@@ -44,13 +43,22 @@ jobs:
         with:
           clean: false
           path: carmr
-          token: '${{ secrets.PLATFORM_REPO_UPDATE_PAT }}'
+          # token: '${{ secrets.PAT }}'
       - name: "Let's have a look"
         shell: pwsh
         run: |
-          dir env:
-          pwd
-          gci -recurse | select FullName
+          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Get-ModulesToPublish.ps1')
+          . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToPublicBicepRegistry.ps1')
+
+          $ModulesPath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
+          Get-ParentModules $ModulesPath -Verbose
+
+      - name: Azure Login
+        if: github.event.inputs.publish == 'true'
+        uses: Azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
       - name: 'Publish module to private bicep registry'
         if: github.event.inputs.publish == 'true'
         uses: azure/powershell@v1
@@ -61,7 +69,7 @@ jobs:
             . (Join-Path $env:GITHUB_WORKSPACE 'scripts' 'Publish-ModuleToPublicBicepRegistry.ps1')
 
             $functionInput = @{
-              TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ inputs.templateFilePath }}"
+              TemplateFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ env.modulesPath }}"
             }
 
             Write-Verbose "Invoke task with" -Verbose
@@ -72,7 +80,7 @@ jobs:
 
             # Publish the modified child resources
             foreach ($ModuleToPublish in $ModulesToPublish) {
-              $RelPath = (($ModuleToPublish.TemplateFilePath).Split('/modules/')[-1]).Split('/deploy.')[0]
+              $RelPath = (($ModuleToPublish.FullName).Split('/modules/')[-1]).Split('/deploy.')[0]
               Write-Output "::group::$(' - [{0}] [{1}]' -f $RelPath, $ModuleToPublish.Version)"
 
               $functionInput = @{
@@ -80,15 +88,16 @@ jobs:
                 BicepRegistryName       = '${{ env.bicepRegistryName }}'
                 BicepRegistryRgName     = '${{ env.bicepRegistryRgName }}'
                 BicepRegistryRgLocation = '${{ env.bicepRegistryRgLocation }}'
+                BicepRegistryPublic     = '${{ env.bicepRegistryPublic}}'
                 ModuleVersion           = $ModuleToPublish.Version
               }
 
               Write-Verbose "Invoke task with" -Verbose
               Write-Verbose ($functionInput | ConvertTo-Json | Out-String) -Verbose
 
-              Publish-ModuleToPrivateBicepRegistry @functionInput -Verbose
+              Publish-ModuleToBicepRegistry @functionInput -Verbose
             }
-      - name: 'Push latest modules'
+      - name: 'Push latest parent modules'
         uses: actions/checkout@v3
         run: |
           date > generated.txt
