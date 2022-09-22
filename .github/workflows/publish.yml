@@ -33,17 +33,18 @@ jobs:
     # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-20.04
     steps:
-      - name: 'Pull Azure/ResourceModules'
+      - name: 'Checkout Azure/resource-modules-registry'
+        uses: actions/checkout@v3
+        # with:
+          # clean: false
+          # path: carmr
+          # token: '${{ secrets.PAT }}'
+      - name: 'Checkout Azure/ResourceModules'
         uses: actions/checkout@v3
         with:
           repository: 'Azure/ResourceModules'
           path: carml
-      - name: 'Checkout Azure/resource-modules-registry'
-        uses: actions/checkout@v3
-        with:
-          clean: false
-          # path: carmr
-          # token: '${{ secrets.PAT }}'
+          # clean: false
       - name: "Let's have a look"
         shell: pwsh
         run: |
