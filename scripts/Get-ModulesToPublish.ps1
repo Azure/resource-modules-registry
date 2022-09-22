@@ -7,13 +7,8 @@ Get parent modules only.
 .EXAMPLE
 Get-ParentModules
 
-    Directory: C:\Repo\Azure\ResourceModules\utilities\pipelines\resourcePublish
+    Directory: C:\Repo\Azure\ResourceModules\modules
 
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
-la---          08.12.2021    15:50           7133 Script.ps1
-
-Get modified files between previous and current commit depending on if you are running on main/master or a custom branch.
 #>
 function Get-ParentModules {
     [CmdletBinding()]
@@ -21,10 +16,20 @@ function Get-ParentModules {
         [Parameter(Mandatory)]
         [string] $ModulesPath
     )
-
-    $ParentModules = Get-ChildItem -Path $ModulesPath -Recurse -Depth 2 -Include *.bicep,*.json
-
-    return $ParentModules
+    $ModulesPath = $ModulesPath + '\*'
+    $ParentModulePaths = New-Object -TypeName "System.Collections.ArrayList"
+    $tempPath = Get-ChildItem -Path $ModulesPath -exclude *.shared,.test,.bicep -Directory
+    foreach ($tempPath in $tempPath) {
+        $currentDir = $(Get-ChildItem -Path $tempPath -Include *.bicep,*.json -exclude bicepconfig.json, .shared -Recurse -Depth 0 -File)
+        if ($currentDir) {
+            $ParentModulePaths += $(Split-Path $currentDir[0])
+        }
+        else {
+            $nextDir = Get-ChildItem -Path $tempPath -Include *.bicep,*.json -exclude bicepconfig.json -Recurse -Depth 1 -file
+            $ParentModulePaths += $(Split-Path $nextDir[0])
+        }
+    }
+    return $ParentModulePaths
 }
 
 <#
