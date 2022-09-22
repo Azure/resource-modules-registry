@@ -1,7 +1,6 @@
-# Project
+# Resource Modules Registry
 
-This repository is used to create a lite version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) and decoupling its Modules.
-It is a simplified version of Azure/ResourceModules used to publish parent Modules only to a separate Container Registry.
+This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) with parent Modules to be published into a public [Bicep registry](#).
 
 ## Contributing
 
