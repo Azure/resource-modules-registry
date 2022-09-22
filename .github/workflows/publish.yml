@@ -26,7 +26,7 @@ env:
   ARM_TENANT_ID: '${{ secrets.ARM_TENANT_ID }}'
 
   GitUserName: 'CARMR Bot'
-  itUserEmail: 'carmr@noreply.github.com'
+  GitUserEmail: 'carmr@noreply.github.com'
 
 jobs:
   job_publish_modules:
@@ -89,12 +89,12 @@ jobs:
               Publish-ModuleToPrivateBicepRegistry @functionInput -Verbose
             }
       - name: 'Push latest modules'
-        shell: pwsh
-        run: |
+      - uses: actions/checkout@v3
+      - run: |
+          date > generated.txt
           git config --global user.email '${{ env.GitUserEmail }}'
           git config --global user.name '${{ env.GitUserName }}'
 
-          git pull
           git add .
           git commit -m "Push latest modules"
           git push
