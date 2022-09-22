@@ -25,7 +25,7 @@ env:
   bicepRegistryRgLocation: 'Australia East' # The location of the resource group to publish to
   bicepRegistryPublic: true # Set to true, if you would like to enable public (anonymous) registry access
 
-  modulesPath: carml
+  modulesPath: carml/modules
 
 jobs:
   job_publish_modules:
@@ -100,8 +100,8 @@ jobs:
               Publish-ModuleToBicepRegistry @functionInput -Verbose
             }
       - name: 'Push latest parent modules'
-        uses: actions/checkout@v3
-      - run: |
+        if: github.ref == 'refs/heads/main'
+        run: |
           date > generated.txt
           git config --global user.email '${{ env.GitUserEmail }}'
           git config --global user.name '${{ env.GitUserName }}'
