@@ -6,8 +6,8 @@ This repository is used to store a decoupled version of [Azure/ResourceModules](
 
  | Module | Version | Public Bicep Registry Url Path |
   | - | - | - | 
-  |  [Storage Account](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.Storage/storageAccounts) | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `carml.azurecr.io/bicep/modules/microsoft.storage.storageaccounts:latest`
- |  [Key Vault](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.KeyVault/vaults)  | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `carml.azurecr.io/bicep/microsoft.keyvault.vaults:latest`
+  |  [Storage Account](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.Storage/storageAccounts) | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `br:carmr.azurecr.io/bicep/modules/microsoft.storage.storageaccounts:latest`
+ |  [Key Vault](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.KeyVault/vaults)  | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `br:carmr.azurecr.io/bicep/microsoft.keyvault.vaults:latest`
 
 ```bicep
 param name string
