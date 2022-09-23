@@ -12,7 +12,7 @@ This repository is used to store a decoupled version of [Azure/ResourceModules](
  ## Usage
  
 ```bicep
- 
+// latest version
 module sa 'br:carmr.azurecr.io:microsoft.storage.storageaccounts:latest' = {
   name: 'sa'
   params: {
@@ -20,8 +20,8 @@ module sa 'br:carmr.azurecr.io:microsoft.storage.storageaccounts:latest' = {
   }
 }
 
-// with alias
-module kv 'br/carmr:microsoft.keyvault.vaults:latest' = {
+// with alias and specific version
+module kv 'br/carmr:microsoft.keyvault.vaults:0.4' = {
   name: 'kv'
   params: {
     name: name
