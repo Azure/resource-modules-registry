@@ -1,19 +1,28 @@
 # Resource Modules Registry
 
-This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) where modules are published to a public [Bicep registry](#) and can be called from.
+This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) and to publish modules to a public [Bicep registry](#).
 
 ## Modules
 
  | Module | Version | Public Bicep Registry Url Path |
   | - | - | - | 
   |  [Storage Account](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.Storage/storageAccounts) | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `br:carmr.azurecr.io/bicep/modules/microsoft.storage.storageaccounts:latest`
- |  [Key Vault](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.KeyVault/vaults)  | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.storage.storageaccounts/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `br:carmr.azurecr.io/bicep/microsoft.keyvault.vaults:latest`
+ |  [Key Vault](https://github.com/Azure/ResourceModules/tree/main/modules/Microsoft.KeyVault/vaults)  | <a href="https://adpsxxazacrx009.azurecr.io/v2/bicep/modules/microsoft.KeyVault/vaults/tags/list"><image src="https://img.shields.io/badge/carmr-0.4-blue"></a> | `br:carmr.azurecr.io/bicep/microsoft.keyvault.vaults:latest`
 
+ ## Usage
+ 
 ```bicep
-param name string
+ 
+module sa 'br:carmr.azurecr.io:microsoft.storage.storageaccounts:latest' = {
+  name: 'sa'
+  params: {
+    name: name
+  }
+}
 
-module storageModule 'br/carmr:microsoft.storage.storageaccounts:1.0' = {
-  name: 'stgStorage'
+// with alias
+module kv 'br/carmr:microsoft.keyvault.vaults:latest' = {
+  name: 'kv'
   params: {
     name: name
   }
