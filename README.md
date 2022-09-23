@@ -1,6 +1,6 @@
 # Resource Modules Registry
 
-This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) and to publish modules to a public [Bicep registry](#).
+This repository is used to store a decoupled version of [Azure/ResourceModules](https://github.com/Azure/ResourceModules) to publish modules to a public [Bicep registry](#).
 
 ## Modules
 
