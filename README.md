@@ -13,7 +13,7 @@ This repository is used to store a decoupled version of [Azure/ResourceModules](
  
 ```bicep
 // latest version
-module sa 'br:carmr.azurecr.io:microsoft.storage.storageaccounts:latest' = {
+module sa 'br:carmr.azurecr.io/bicep/modules/microsoft.storage.storageaccounts:latest' = {
   name: 'sa'
   params: {
     name: name
